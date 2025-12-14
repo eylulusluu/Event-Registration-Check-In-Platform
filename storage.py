@@ -50,3 +50,25 @@ def backup_state(base_dir: str, backup_dir: str):
             backed_files.append(os.path.join(root, f))
 
     return backed_files
+
+import shutil
+from datetime import datetime
+import os
+
+
+def backup_state(base_dir: str, backup_dir: str) -> list[str]:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = os.path.join(backup_dir, f"backup_{timestamp}")
+    os.makedirs(backup_path, exist_ok=True)
+
+    copied_files = []
+
+    for filename in os.listdir(base_dir):
+        if filename.endswith(".json"):
+            src = os.path.join(base_dir, filename)
+            dst = os.path.join(backup_path, filename)
+            shutil.copy(src, dst)
+            copied_files.append(dst)
+
+    return copied_files
+
