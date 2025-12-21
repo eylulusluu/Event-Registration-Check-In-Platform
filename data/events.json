@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "E1",
+    "name": "Tech Conference",
+    "location": "Istanbul",
+    "start_date": "2025-01-10",
+    "end_date": "2025-01-12",
+    "capacity": 1,
+    "price": 100,
+    "description": "Annual tech event",
+    "sessions": [
+      {
+        "id": "S1",
+        "title": "AI Workshop",
+        "room": "Room A",
+        "capacity": 30
+      }
+    ]
+  }
+]

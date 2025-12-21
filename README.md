@@ -43,3 +43,13 @@ A Python terminal application for managing event registrations and participant c
 - `data/events.json` – Stores all event and session information.
 - `data/attendees.json` – Stores all attendee profiles.
 - `data/registrations.json` – Stores all registrations and ticket assignments.
+
+## Testing
+Automated tests are provided to validate:
+- Capacity enforcement
+- Waitlist promotion
+- Check-in workflow
+
+Run tests with:
+pytest tests/
+

@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "R1",
+    "event_id": "E1",
+    "attendee_id": "A1",
+    "status": "confirmed",
+    "seat": 1,
+    "checked_in": false,
+    "payment_status": "paid"
+  },
+  {
+    "id": "R2",
+    "event_id": "E1",
+    "attendee_id": "A2",
+    "status": "waitlist",
+    "seat": null,
+    "checked_in": false,
+    "payment_status": "pending"
+  }
+]
