@@ -53,3 +53,7 @@ Automated tests are provided to validate:
 Run tests with:
 pytest tests/
 
+Tests are run using:
+py -m pytest tests/
+
+
