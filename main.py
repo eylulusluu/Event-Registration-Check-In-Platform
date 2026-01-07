@@ -1,78 +1,116 @@
 import sys
-# events.py dosyasından gerekli fonksiyonları çekiyoruz
-from events import load_events, save_events, create_event, add_session
+import storage
+import events
+import attendees
+import registration
+import checkin
+import reports
 
+# Veri Dosyalarının Yolları
 DATA_DIR = "data"
 EVENTS_FILE = f"{DATA_DIR}/events.json"
+ATTENDEES_FILE = f"{DATA_DIR}/attendees.json"
+REGS_FILE = f"{DATA_DIR}/registrations.json"
 
-def print_menu():
-    print("\n--- ETKİNLİK YÖNETİM SİSTEMİ ---")
-    print("1. Etkinlikleri Listele")
-    print("2. Yeni Etkinlik Oluştur (Create Event)")
-    print("3. Çıkış")
+def main_menu():
+    # Verileri Yükle
+    event_list = storage.load_data(EVENTS_FILE)
+    attendee_list = storage.load_data(ATTENDEES_FILE)
+    reg_list = storage.load_data(REGS_FILE)
 
-def create_new_event_ui(events):
-    print("\n--- Yeni Etkinlik Oluşturma ---")
-    # Kullanıcıdan tek tek veri alıyoruz
-    name = input("Etkinlik Adı: ")
-    location = input("Konum: ")
-    start_date = input("Başlangıç Tarihi (YYYY-MM-DD): ")
-    end_date = input("Bitiş Tarihi (YYYY-MM-DD): ")
-    
-    # Sayısal değerler için hata kontrolü (Validation) [cite: 11]
-    try:
-        capacity = int(input("Kapasite (Sayı): "))
-        price = float(input("Bilet Fiyatı: "))
-    except ValueError:
-        print("Hata: Kapasite ve Fiyat sayısal olmalıdır!")
-        return
-
-    description = input("Açıklama: ")
-
-    # Toplanan verileri sözlük (dictionary) haline getiriyoruz
-    new_event_data = {
-        "name": name,
-        "location": location,
-        "start_date": start_date,
-        "end_date": end_date,
-        "capacity": capacity,
-        "price": price,
-        "description": description
-    }
-
-    # events.py içindeki create_event fonksiyonunu çağırıyoruz
-    created_event = create_event(events, new_event_data)
-    print(f"\nBaşarılı! Yeni etkinlik oluşturuldu. ID: {created_event['id']}")
-    
-    # Değişikliği hemen kaydediyoruz [cite: 65]
-    save_events(EVENTS_FILE, events)
-    print("Veriler kaydedildi.")
-
-def list_all_events(events):
-    print("\n--- Mevcut Etkinlikler ---")
-    if not events:
-        print("Hiç etkinlik yok.")
-    else:
-        for ev in events:
-            print(f"ID: {ev['id']} | Ad: {ev['name']} | Yer: {ev['location']}")
-
-def main():
-    # Program başlarken verileri yüklüyoruz
-    events = load_events(EVENTS_FILE)
-    
     while True:
-        print_menu()
-        secim = input("Seçiminiz (1-3): ")
+        print("\n=== ETKİNLİK PLATFORMU ===")
+        print("1. Organizatör Menüsü")
+        print("2. Kayıt / Bilet Al (Katılımcı)")
+        print("3. Personel / Check-In Menüsü")
+        print("4. Raporlar")
+        print("5. Yedekle ve Çıkış")
+        
+        choice = input("Seçiminiz: ")
 
-        if secim == '1':
-            list_all_events(events)
-        elif secim == '2':
-            create_new_event_ui(events)
-        elif secim == '3':
-            print("Çıkış yapılıyor...")
+        if choice == '1':
+            organizer_menu(event_list)
+            storage.save_data(EVENTS_FILE, event_list) # Her işlemden sonra kaydet
+
+        elif choice == '2':
+            attendee_menu(event_list, attendee_list, reg_list)
+            storage.save_data(ATTENDEES_FILE, attendee_list)
+            storage.save_data(REGS_FILE, reg_list)
+
+        elif choice == '3':
+            staff_menu(reg_list, event_list)
+            storage.save_data(REGS_FILE, reg_list)
+
+        elif choice == '4':
+            reports.generate_report(event_list, reg_list)
+
+        elif choice == '5':
+            storage.save_data(EVENTS_FILE, event_list)
+            storage.save_data(ATTENDEES_FILE, attendee_list)
+            storage.save_data(REGS_FILE, reg_list)
+            storage.backup_state()
+            print("Veriler yedeklendi. Çıkış yapılıyor...")
             break
         else:
-            print("Geçersiz seçim, tekrar deneyin.")
+            print("Geçersiz seçim.")
+
+def organizer_menu(event_list):
+    print("\n--- Organizatör Paneli ---")
+    print("1. Etkinlik Ekle")
+    print("2. Etkinlikleri Listele")
+    c = input("Seçim: ")
+    if c == '1':
+        name = input("Etkinlik Adı: ")
+        cap = int(input("Kapasite: "))
+        price = float(input("Fiyat: "))
+        events.create_event(event_list, {"name": name, "capacity": cap, "price": price})
+        print("Etkinlik oluşturuldu!")
+    elif c == '2':
+        for ev in event_list:
+            print(f"[{ev['id']}] {ev['name']} (Kapasite: {ev['capacity']})")
+
+def attendee_menu(event_list, attendee_list, reg_list):
+    print("\n--- Bilet Alma Ekranı ---")
+    # Önce Kullanıcı Oluştur veya Seç
+    name = input("Adınız Soyadınız: ")
+    email = input("Email Adresiniz: ")
+    
+    # Basitçe mevcut mu diye bakıyoruz, yoksa oluşturuyoruz
+    user = attendees.authenticate_attendee(attendee_list, email)
+    if not user:
+        user = attendees.register_attendee(attendee_list, {"name": name, "email": email})
+    
+    print("\nMevcut Etkinlikler:")
+    for ev in event_list:
+        print(f"ID: {ev['id']} | {ev['name']} | {ev['price']} TL")
+    
+    ev_id = input("Katılmak istediğiniz Etkinlik ID'si: ")
+    
+    result = registration.create_registration(reg_list, {
+        "event_id": ev_id,
+        "attendee_id": user["id"],
+        "attendee_name": user["name"]
+    }, event_list)
+    
+    if "error" in result:
+        print(f"HATA: {result['error']}")
+    else:
+        print(f"İşlem Başarılı! Durum: {result['status']}")
+        print(f"Kayıt Kodunuz (Check-in için saklayın): {result['confirmation_code']}")
+
+def staff_menu(reg_list, event_list):
+    print("\n--- Personel Check-In ---")
+    code = input("Katılımcı Kayıt Kodu (Confirmation Code): ")
+    result = checkin.check_in_attendee(reg_list, code)
+    
+    if "error" in result:
+        print(f"GİRİŞ REDDEDİLDİ: {result['error']}")
+    else:
+        print(f"GİRİŞ ONAYLANDI: {result['attendee_name']}")
+        # Rozet bas
+        ev_name = next((e['name'] for e in event_list if e['id'] == result['event_id']), "Etkinlik")
+        file = checkin.generate_badge(result['attendee_name'], ev_name)
+        print(f"Rozet oluşturuldu: {file}")
 
 if __name__ == "__main__":
-    main()
+    main_menu()

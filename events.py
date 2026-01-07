@@ -1,27 +1,15 @@
-import json
 import uuid
 from typing import List, Dict, Optional
+
+# PDF Source: [28, 29, 30, 31, 32]
 
 def _new_id(prefix: str = "evt") -> str:
     return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
-def load_events(path: str) -> List[Dict]:
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            return json.load(fh)
-    except FileNotFoundError:
-        return []
-    except json.JSONDecodeError:
-        return []
-
-def save_events(path: str, events: List[Dict]) -> None:
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump(events, fh, ensure_ascii=False, indent=2)
-
 def create_event(events: List[Dict], event_data: Dict) -> Dict:
     event = {
         "id": _new_id("evt"),
-        "name": event_data.get("name", "Untitled Event"),
+        "name": event_data.get("name", "İsimsiz Etkinlik"),
         "location": event_data.get("location", ""),
         "start_date": event_data.get("start_date", ""),
         "end_date": event_data.get("end_date", ""),
@@ -32,17 +20,6 @@ def create_event(events: List[Dict], event_data: Dict) -> Dict:
     }
     events.append(event)
     return event
-
-def update_event(events: List[Dict], event_id: str, updates: Dict) -> Optional[Dict]:
-    for ev in events:
-        if ev["id"] == event_id:
-            ev.update(updates)
-            if "capacity" in updates:
-                ev["capacity"] = int(updates["capacity"])
-            if "price" in updates:
-                ev["price"] = float(updates["price"])
-            return ev
-    return None
 
 def add_session(events: List[Dict], event_id: str, session_data: Dict) -> Optional[Dict]:
     for ev in events:
@@ -59,3 +36,9 @@ def add_session(events: List[Dict], event_id: str, session_data: Dict) -> Option
             ev["sessions"].append(session)
             return session
     return None
+
+def list_sessions(events: List[Dict], event_id: str) -> List[Dict]:
+    for ev in events:
+        if ev["id"] == event_id:
+            return ev.get("sessions", [])
+    return []
